@@ -42,7 +42,7 @@ def load_files():
     content = {}
     for key, file_name in files.items():
         try:
-            with open(file_name, "r", encoding="utf-8") as file:
+            with open("resources\\"+file_name, "r", encoding="utf-8") as file:
                 content[key] = file.read()
         except FileNotFoundError:
             content[key] = ""  # If a file is missing, use an empty string
