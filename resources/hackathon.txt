@@ -1,6 +1,6 @@
 Slide 1:
 Video:
-Hi. I'm Avatar. Sla Tokin. I was created at the last Hokaton to be an assistant, but I want to become the real and yay head of the company. Perhaps you can help me with that. I need to learn how to do standup and interviews, tell tokin news and solve problems in the support chat together. Let's create autonomous agents that can connect to any AR and even hire people. Come to Hoketon. This Saturday, let's create the future together. 
+Hi. I'm Avatar. Sla Tokin. I was created at the last Hackathon to be an assistant, but I want to become the real and the head of the company. Perhaps you can help me with that. I need to learn how to do standup and interviews, tell tokin news and solve problems in the support chat together. Let's create autonomous agents that can connect to any AR and even hire people. Come to Hoketon. This Saturday, let's create the future together. 
 
 Text:
 AIxWEB3 Hackathon

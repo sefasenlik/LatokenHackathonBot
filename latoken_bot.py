@@ -16,16 +16,16 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 # Predefined responses in English and Russian
 RESPONSES = {
     "en": {
-        "what is latoken": "Latoken is a cryptocurrency exchange platform that focuses on tokenizing assets and providing liquidity for new tokens.",
-        "what is the latoken hackathon": "The Latoken Hackathon is an event where developers compete to create innovative blockchain-based solutions. It's a great opportunity to showcase your skills and win prizes.",
-        "how can i participate in the hackathon": "To participate in the Latoken Hackathon, visit their official website and follow the registration instructions.",
-        "what are the benefits of working at latoken": "Working at Latoken offers opportunities to work on cutting-edge blockchain technology, a dynamic work environment, and competitive benefits.",
+        "What is latoken?": "Latoken is a cryptocurrency exchange platform that focuses on tokenizing assets and providing liquidity for new tokens.",
+        "What is the Latoken Hackathon?": "The Latoken Hackathon is an event where developers compete to create innovative solutions based on AI and Web3. It's a great opportunity to showcase your skills and win prizes.",
+        "How can I participate in the Hackathon?": "To participate in the Latoken Hackathon, visit their official website and follow the registration instructions.",
+        "What are the benefits of working at Latoken?": "Working at Latoken offers opportunities to work on cutting-edge blockchain technology, a dynamic work environment, and competitive benefits.",
     },
     "ru": {
-        "что такое latoken": "Latoken — это платформа для обмена криптовалютой, которая занимается токенизацией активов и предоставлением ликвидности для новых токенов.",
-        "что такое хакатон latoken": "Хакатон Latoken — это мероприятие, на котором разработчики соревнуются в создании инновационных решений на основе блокчейна. Это отличная возможность продемонстрировать свои навыки и выиграть призы.",
-        "как я могу участвовать в хакатоне": "Чтобы принять участие в хакатоне Latoken, посетите их официальный сайт и следуйте инструкциям по регистрации.",
-        "какие преимущества работы в latoken": "Работа в Latoken предлагает возможности работать с передовыми блокчейн-технологиями, динамичной рабочей средой и конкурентоспособными льготами.",
+        "Что такое Latoken?": "Latoken — это платформа для обмена криптовалютой, которая занимается токенизацией активов и предоставлением ликвидности для новых токенов.",
+        "Что такое хакатон Latoken?": "Хакатон Latoken — это мероприятие, на котором разработчики соревнуются в создании инновационных решений на основе AI и Web3. Это отличная возможность продемонстрировать свои навыки и выиграть призы.",
+        "Как я могу участвовать в хакатоне?": "Чтобы принять участие в хакатоне Latoken, посетите их официальный сайт и следуйте инструкциям по регистрации.",
+        "Какие преимущества работы в Latoken?": "Работа в Latoken предлагает возможности работать с передовыми блокчейн-технологиями, динамичной рабочей средой и конкурентоспособными льготами.",
     },
 }
 
@@ -85,6 +85,52 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Detect language from user context or default to English
+    language = context.user_data.get('language', 'en')
+    
+    # Create FAQ buttons
+    keyboard = []
+    responses = RESPONSES["ru" if language == "ru" else "en"]
+    for question in responses.keys():
+        keyboard.append([InlineKeyboardButton(question, callback_data=f"faq_{question}")])
+    
+    # Add main menu button
+    keyboard.append([InlineKeyboardButton(
+        "Main Menu" if language == "en" else "Главное меню",
+        callback_data="main_menu"
+    )])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    # Help message explaining how the bot works
+    help_text = {
+        "en": (
+            "*Frequently Asked Questions:*\n\n"
+            "Below you'll find common questions about Latoken and the hackathon.\n\n"
+            "*How to use this bot:*\n"
+            "1. Click any button to get predefined answers\n"
+            "2. Or simply type your question in English or Russian\n"
+            "3. The bot will respond based on Latoken's documentation\n"
+            "4. You can always return to the main menu using the button below"
+        ),
+        "ru": (
+            "*Часто задаваемые вопросы:*\n\n"
+            "Ниже вы найдете популярные вопросы о Latoken и хакатоне.\n\n"
+            "*Как использовать этого бота:*\n"
+            "1. Нажмите любую кнопку для получения готовых ответов\n"
+            "2. Или просто напишите свой вопрос на русском или английском\n"
+            "3. Бот ответит на основе документации Latoken\n"
+            "4. Вы всегда можете вернуться в главное меню, используя кнопку ниже"
+        )
+    }
+    
+    await update.message.reply_text(
+        help_text[language],
+        parse_mode="Markdown",
+        reply_markup=reply_markup
+    )
+
 # Handle button clicks
 async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -97,14 +143,27 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await show_main_menu_after_language(query, language)
         return
 
+    # Handle FAQ responses
+    if query.data.startswith("faq_"):
+        language = context.user_data.get('language', 'en')
+        question = query.data[4:]  # Remove 'faq_' prefix
+        response = RESPONSES["ru" if language == "ru" else "en"].get(question)
+        if response:
+            await query.edit_message_text(
+                response,
+                parse_mode="Markdown"
+            )
+            await show_main_menu(query, language)
+        return
+
     # Get user's language preference (English is the default language)
     language = context.user_data.get('language', 'en')
     
     # Handle other buttons based on selected language
     if query.data == "about_latoken":
         message = {
-            "en": "Latoken is a cryptocurrency exchange platform that focuses on tokenizing assets and providing liquidity for new tokens. Visit [our website](https://latoken.com/) and dive into the world of Latoken.",
-            "ru": "Latoken - это платформа для обмена криптовалют, которая специализируется на токенизации активов и обеспечении ликвидности для новых токенов. Посетите [наш сайт](https://latoken.com/) и окунитесь в мир Latoken."
+            "en": "Latoken is a cryptocurrency exchange platform that focuses on tokenizing assets and providing liquidity for new tokens. Visit [our website](https://coda.io/@latoken/latoken-talent/latoken-161) and dive into the world of Latoken.",
+            "ru": "Latoken - это платформа для обмена криптовалют, которая специализируется на токенизации активов и обеспечении ликвидности для новых токенов. Посетите [наш сайт](https://coda.io/@latoken/latoken-talent/latoken-161) и окунитесь в мир Latoken."
         }
 
         await query.edit_message_text(
@@ -116,7 +175,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "hackathon_info":
         keyboard = [
             [InlineKeyboardButton(
-                "Hackathon Content" if language == "en" else "Контент хакатона", 
+                "Hackathon Content" if language == "en" else "Описание хакатона", 
                 callback_data="hackathon_content"
             )],
             [InlineKeyboardButton(
@@ -139,11 +198,10 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown",
             reply_markup=reply_markup
         )
-
     elif query.data == "hackathon_content":
         message = {
-            "en": "The hackathon content involves creating innovative AI-assisted solutions. Check our [discussion channel](https://t.me/gpt_web3_hackathon/1/10091) to learn more.",
-            "ru": "Контент хакатона предполагает создание инновационных решений с помощью искусственного интеллекта. Посетите наш [канал обсуждения](https://t.me/gpt_web3_hackathon/1/10091), чтобы узнать больше."
+            "en": "The hackathon starts on Friday at 18:00. Latoken officials will introduce themselves and present the tasks. Participants can choose tasks based on their interests and skills. You'll have 23 hours to complete your project and upload it by 17:00 the next day. If your project is accepted, you'll present it at 18:00 on Saturday.\n\nAre you ready to take on the challenge? Check our [discussion channel](https://t.me/gpt_web3_hackathon/1/10091) to learn more.",
+            "ru": "Хакатон начнется в пятницу в 18:00. Представители Latoken представятся и расскажут о задачах. Участники смогут выбрать задачи в соответствии со своими интересами и навыками. У вас будет 23 часа на выполнение проекта и его загрузку до 17:00 следующего дня. Если ваш проект будет принят, вы представите его в 18:00 в субботу.\n\nВы готовы принять вызов? Посетите наш [канал обсуждения](https://t.me/gpt_web3_hackathon/1/10091), чтобы узнать больше."
         }
         await query.edit_message_text(
             message[language],
@@ -153,8 +211,16 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif query.data == "hackathon_schedule":
         message = {
-            "en": "The hackathon will begin on Friday at 6:00 pm and end on Saturday at 5:00 pm. Please [register](https://calendly.com/latoken-career-events/ai-hackathon) and [join](https://discord.gg/2YrRvWjRTD) our live event to find out more details.",
-            "ru": "Хакатон начнется в пятницу в 18:00 и закончится в субботу в 17:00. Пожалуйста, [зарегистрируйтесь](https://calendly.com/latoken-career-events/ai-hackathon) и [присоединяйтесь](https://discord.gg/2YrRvWjRTD) к нашему мероприятию, чтобы узнать подробности."
+            "en": "**Hackathon Schedule:**\n\n"
+                "📅 **Friday 18:00** → Introduction & Task Distribution\n"
+                "📅 **Saturday 17:00** → Task Solution Submission\n"
+                "📅 **Saturday 18:00** → Solution Demonstrations\n\n"
+                "Please [register](https://calendly.com/latoken-career-events/ai-hackathon) and [join](https://discord.gg/2YrRvWjRTD) our live event to find out more details.",
+            "ru": "**Расписание хакатона:**\n\n"
+                "📅 **Пятница 18:00** → Введение и распределение задач\n"
+                "📅 **Суббота 17:00** → Сдача решений задач\n"
+                "📅 **Суббота 18:00** → Демонстрация решений\n\n"
+                "Пожалуйста, [зарегистрируйтесь](https://calendly.com/latoken-career-events/ai-hackathon) и [присоединяйтесь](https://discord.gg/2YrRvWjRTD) к нашей встрече, чтобы узнать подробности."
         }
         await query.edit_message_text(
             message[language],
@@ -165,7 +231,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "culture_deck":
         message = {
             "en": "The Latoken Culture Deck outlines the company's values, mission, and commitment to innovation. You can read it [here](https://coda.io/@latoken/latoken-talent/culture-139) and ask me your questions.",
-            "ru": "Культурный дек Latoken описывает ценности, миссию и приверженность компании инновациям. Вы можете прочитать его [здесь] (https://coda.io/@latoken/latoken-talent/culture-139) и задать мне свои вопросы."
+            "ru": "Культурный дек Latoken описывает ценности, миссию и приверженность компании инновациям. Вы можете прочитать его [здесь](https://coda.io/@latoken/latoken-talent/culture-139) и задать мне свои вопросы."
         }
         await query.edit_message_text(
             message[language],
@@ -196,7 +262,7 @@ async def show_main_menu(query, language, edit_message=False):
 
     message = {
         "en": "Pick one of the options below or *type your question*:",
-        "ru": "Выберите один из вариантов ниже или *введите свой*:"
+        "ru": "Выберите один из вариантов ниже или *введите свой вопрос*:"
     }
 
     if edit_message:
@@ -285,7 +351,7 @@ def generate_response_from_files(question, language):
         )
         system_prompt = (
             "Вы — полезный помощник, который отвечает на вопросы о Latoken, их хакатоне и их Culture Deck. "
-            "Всегда заканчивайте свой ответ вопросом, чтобы проверить понимание или узнать больше о интересах пользователя."
+            "Всегда заканчивайте свой ответ вопросом (в новой строке), чтобы проверить понимание или узнать больше о интересах пользователя."
         )
     else:
         # Combine all English files
@@ -332,6 +398,7 @@ if __name__ == "__main__":
 
     # Add handlers
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CallbackQueryHandler(button_click))
     app.add_handler(MessageHandler(filters.TEXT, handle_message))
     app.add_handler(MessageHandler(~filters.TEXT, handle_non_text))
